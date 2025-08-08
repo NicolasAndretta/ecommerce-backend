@@ -7,22 +7,23 @@ let userService;
 
 switch (envConfig.PERSISTENCE) {
   case 'mongodb':
-    console.log('🧩 Usando persistencia con MongoDB');
-    // Luego implementarás estos managers
-    const { default: MongoProductManager } = await import('../dao/mongodb/managers/ProductManager.js');
-    const { default: MongoCartManager } = await import('../dao/mongodb/managers/CartManager.js');
-    const { default: MongoUserManager } = await import('../dao/mongodb/managers/UserManager.js');
+    console.log('🟣 Usando persistencia con MongoDB');
+    const { connectDB } = await import('./dbConnection.js');
+    await connectDB();
+
+    const { MongoProductManager } = await import('../dao/filesystem/mongodb/managers/MongoProductManager.js');
+    // TODO: importar los otros managers cuando los tengas
     productService = new MongoProductManager();
-    cartService = new MongoCartManager();
-    userService = new MongoUserManager();
+    cartService = null; // actualizar cuando tengas MongoCartManager
+    userService = null; // actualizar cuando tengas MongoUserManager
     break;
 
-  case 'fs':
   default:
-    console.log('📁 Usando persistencia con FileSystem');
+    console.log('🟡 Usando persistencia con FileSystem');
     const { default: FSProductManager } = await import('../dao/filesystem/managers/FSProductManager.js');
     const { default: FSCartManager } = await import('../dao/filesystem/managers/FSCartManager.js');
     const { default: FSUserManager } = await import('../dao/filesystem/managers/FSUserManager.js');
+
     productService = new FSProductManager();
     cartService = new FSCartManager();
     userService = new FSUserManager();

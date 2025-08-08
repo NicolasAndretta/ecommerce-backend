@@ -1,7 +1,7 @@
 // src/controllers/cart.controller.js
-import { cartService } from '../dao/filesystem/index.js';
 
-export const createCart = async (req, res) => {
+// Crear un carrito nuevo
+export const createCart = async (req, res, cartService) => {
   try {
     const cart = await cartService.createCart();
     res.status(201).json(cart);
@@ -10,7 +10,8 @@ export const createCart = async (req, res) => {
   }
 };
 
-export const getCartById = async (req, res) => {
+// Obtener un carrito por ID
+export const getCartById = async (req, res, cartService) => {
   try {
     const cart = await cartService.getCartById(req.params.cid);
     if (!cart) return res.status(404).json({ error: 'Carrito no encontrado' });
@@ -20,7 +21,8 @@ export const getCartById = async (req, res) => {
   }
 };
 
-export const addProductToCart = async (req, res) => {
+// Agregar producto a un carrito
+export const addProductToCart = async (req, res, cartService) => {
   try {
     const updatedCart = await cartService.addProductToCart(req.params.cid, req.params.pid);
     if (!updatedCart) return res.status(404).json({ error: 'Carrito no encontrado' });

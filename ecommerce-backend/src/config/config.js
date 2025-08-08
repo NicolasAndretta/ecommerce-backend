@@ -1,9 +1,4 @@
-// src/config/config.js
-import { envConfig } from './env.js';
-
 export default {
-  persistence: envConfig.PERSISTENCE,
-  port: envConfig.PORT,
-  mongoUri: envConfig.MONGO_URI,
-  jwtSecret: envConfig.JWT_SECRET,
+  persistence: process.env.PERSISTENCE || 'MONGO', // Cambiar a 'FILE' si querés
+  mongoUrl: process.env.MONGO_URL || 'mongodb://localhost:27017/ecommerce'
 };

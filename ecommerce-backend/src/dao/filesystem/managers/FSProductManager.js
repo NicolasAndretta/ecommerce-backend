@@ -5,7 +5,7 @@ import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PRODUCTS_PATH = path.resolve(__dirname, '../../data/products.json');
+const PRODUCTS_PATH = path.resolve(__dirname, '../../../data/products.json');
 
 export default class FSProductManager {
   constructor(filePath = PRODUCTS_PATH) {
@@ -25,24 +25,52 @@ export default class FSProductManager {
     await fs.writeFile(this.path, JSON.stringify(products, null, 2));
   }
 
-  async getProducts(limit = null) {
-    const products = await this.#loadProducts();
-    return limit ? products.slice(0, limit) : products;
+  // Firma compatible con la versión Mongo (limit,page,sort,query)
+  async getProducts(limit = 10, page = 1, sort = null, query = {}) {
+    let products = await this.#loadProducts();
+
+    // filtros simples
+    if (query.category) {
+      products = products.filter(p => p.category === query.category);
+    }
+    if (typeof query.status !== 'undefined') {
+      products = products.filter(p => p.status === query.status);
+    }
+
+    // orden por price
+    if (sort === 'asc') products.sort((a, b) => a.price - b.price);
+    else if (sort === 'desc') products.sort((a, b) => b.price - a.price);
+
+    // paginación simulada
+    const start = (page - 1) * limit;
+    const docs = products.slice(start, start + limit);
+
+    return {
+      docs,
+      totalDocs: products.length,
+      limit,
+      totalPages: Math.ceil(products.length / limit) || 1,
+      page,
+      hasPrevPage: page > 1,
+      hasNextPage: start + limit < products.length,
+      prevPage: page > 1 ? page - 1 : null,
+      nextPage: start + limit < products.length ? page + 1 : null
+    };
   }
 
   async getProductById(id) {
     const products = await this.#loadProducts();
-    return products.find((p) => p.id === id) || null;
+    return products.find(p => p.id === id) || null;
   }
 
-  async addProduct({ title, description, code, price, stock, category, thumbnails = [] }) {
-    if (!title || !description || !code || !price || !stock || !category) {
-      throw new Error('Todos los campos son obligatorios');
+  async addProduct({ title, description, code, price, stock, category, thumbnails = [], status = true }) {
+    if (!title || !description || !code || typeof price === 'undefined' || typeof stock === 'undefined' || !category) {
+      throw new Error('Todos los campos son obligatorios: title, description, code, price, stock, category');
     }
 
     const products = await this.#loadProducts();
 
-    if (products.some((p) => p.code === code)) {
+    if (products.some(p => p.code === code)) {
       throw new Error('Ya existe un producto con ese código');
     }
 
@@ -55,7 +83,7 @@ export default class FSProductManager {
       stock,
       category,
       thumbnails: Array.isArray(thumbnails) ? thumbnails : [thumbnails],
-      status: true
+      status
     };
 
     products.push(newProduct);
@@ -65,24 +93,26 @@ export default class FSProductManager {
 
   async updateProduct(id, updatedFields) {
     const products = await this.#loadProducts();
-    const index = products.findIndex((p) => p.id === id);
-    if (index === -1) return null;
+    const idx = products.findIndex(p => p.id === id);
+    if (idx === -1) throw new Error('Producto no encontrado para actualizar');
 
-    products[index] = {
-      ...products[index],
+    products[idx] = {
+      ...products[idx],
       ...updatedFields,
-      id: products[index].id
+      id: products[idx].id // proteger id
     };
 
     await this.#saveProducts(products);
-    return products[index];
+    return products[idx];
   }
 
   async deleteProduct(id) {
     const products = await this.#loadProducts();
-    const newList = products.filter((p) => p.id !== id);
-    if (newList.length === products.length) return false;
-    await this.#saveProducts(newList);
-    return true;
+    const idx = products.findIndex(p => p.id === id);
+    if (idx === -1) throw new Error('Producto no encontrado para eliminar');
+
+    const [deleted] = products.splice(idx, 1);
+    await this.#saveProducts(products);
+    return deleted;
   }
 }
