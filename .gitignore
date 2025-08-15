@@ -1,0 +1,15 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# Env / credenciales
+.env
+.env.local
+.env.*.local
+
+# Build/coverage
+dist/
+coverage/
+.DS_Store

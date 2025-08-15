@@ -7,5 +7,10 @@ export function signToken(payload) {
 }
 
 export function verifyToken(token) {
-  return jwt.verify(token, envConfig.JWT_SECRET);
+  try {
+    return jwt.verify(token, envConfig.JWT_SECRET);
+  } catch (err) {
+    // re-lanzar para que el middleware se encargue si quiere, o devolver null
+    throw err;
+  }
 }
